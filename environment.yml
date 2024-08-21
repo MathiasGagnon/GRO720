@@ -1,0 +1,9 @@
+name: GRO720
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - matplotlib
+  - black 
+  - pip
