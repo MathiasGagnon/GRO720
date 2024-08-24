@@ -1,132 +1,103 @@
 import numpy as np
+from typing import List
 from matplotlib import pyplot as plt
 
 
-def loss_function(y_pred, y_exp):
+def loss_function(y_pred: float, y_exp: float) -> float:
     return np.sum(((y_pred - y_exp) ** 2))
 
 
-def gradient_function(y_pred, y_exp, x, x_exponent):
-    return 2 * np.sum((y_pred - y_exp) * x**x_exponent)
+def gradient_function(y_pred: float, y_exp: float, X: np.matrix) -> float:
+    return 2 * np.sum((y_pred - y_exp) * X)
 
 
-data = np.array(
-    [
-        [-0.95, +0.02],
-        [-0.82, +0.03],
-        [-0.62, -0.17],
-        [-0.43, -0.12],
-        [-0.17, -0.37],
-        [-0.07, -0.25],
-        [+0.25, -0.10],
-        [+0.38, +0.14],
-        [+0.61, +0.53],
-        [+0.79, +0.71],
-        [+1.04, +1.53],
-    ]
-)
+def regression_polynomial(N: int, data, nbr_iteration: int, lr: float):
+    A = np.matrix([0.0] * (N + 1))
+    losses = []
 
-x = data[:, 0]
-y_exp = data[:, 1]
+    for _ in range(nbr_iteration):
+        total_loss = 0
+        total_gradient = 0
+        for x, y in data:
+            X = [x] * (N + 1)
+            for i in range(N, -1, -1):
+                X[i] = X[i] ** i
 
-theta_0 = 0.0
-theta_1 = 0.0
-theta_2 = 0.0
-theta_3 = 0.0
-theta_4 = 0.0
-theta_5 = 0.0
-theta_6 = 0.0
-theta_7 = 0.0
-learning_rate = 0.01
-num_iterations = 10000
-min_loss = float("inf")
+            X = np.matrix(X)
+            y_pred = np.matmul(A, X.T)
 
-for i in range(num_iterations):
-    y_pred = theta_0 + theta_1 * x
-    loss = loss_function(y_pred, y_exp)
-    grad_theta_0 = gradient_function(y_pred, y_exp, x, 0)
-    grad_theta_1 = gradient_function(y_pred, y_exp, x, 1)
+            total_gradient += gradient_function(y_pred, y, X)
+            total_loss += loss_function(y_pred, y)
 
-    theta_0 -= learning_rate * grad_theta_0
-    theta_1 -= learning_rate * grad_theta_1
-    if loss < min_loss:
-        min_loss = loss
+        A -= lr * total_gradient
+        losses.append(total_loss)
 
-print(f"Min loss: {min_loss}")
-plt.scatter(x, y_exp, color="blue", label="Data")
-plt.plot(x, theta_0 + theta_1 * x, color="red", label="Prediction model")
-plt.xlabel("x")
-plt.ylabel("y")
-plt.legend()
-plt.title("Prediction avec un polynôme de degré 1")
-plt.show()
+    return A, losses
 
 
-for i in range(num_iterations):
-    y_pred = theta_0 + theta_1 * x
-    loss = loss_function(y_pred, y_exp)
-    grad_theta_0 = gradient_function(y_pred, y_exp, x, 0)
-    grad_theta_1 = gradient_function(y_pred, y_exp, x, 1)
-    grad_theta_2 = gradient_function(y_pred, y_exp, x, 2)
+def test_polynomial_degrees(
+    data, degrees: List[int], learning_rate: float, num_iterations: int
+):
+    x_range = np.linspace(-1.25, 1.25, 100)
 
-    theta_0 -= learning_rate * grad_theta_0
-    theta_1 -= learning_rate * grad_theta_1
-    theta_2 -= learning_rate * grad_theta_2
-    if loss < min_loss:
-        min_loss = loss
+    # Plot polynomial regression lines
+    plt.figure(figsize=(12, 8))
+    plt.scatter(data[:, 0], data[:, 1], color="red", label="Training data")
 
-print(f"Min loss: {min_loss}")
-plt.scatter(x, y_exp, color="blue", label="Data")
-plt.plot(
-    x, theta_0 + theta_1 * x + theta_2 * x**2, color="red", label="Prediction model"
-)
-plt.xlabel("x")
-plt.ylabel("y")
-plt.legend()
-plt.title("Prediction avec un polynôme de degré 7")
-plt.show()
+    for N in degrees:
+        # Train the model for polynomial degree N
+        A, losses = regression_polynomial(N, data, num_iterations, learning_rate)
 
-for i in range(num_iterations):
-    y_pred = theta_0 + theta_1 * x
-    loss = loss_function(y_pred, y_exp)
-    grad_theta_0 = gradient_function(y_pred, y_exp, x, 0)
-    grad_theta_1 = gradient_function(y_pred, y_exp, x, 1)
-    grad_theta_2 = gradient_function(y_pred, y_exp, x, 2)
-    grad_theta_3 = gradient_function(y_pred, y_exp, x, 3)
-    grad_theta_4 = gradient_function(y_pred, y_exp, x, 4)
-    grad_theta_5 = gradient_function(y_pred, y_exp, x, 5)
-    grad_theta_6 = gradient_function(y_pred, y_exp, x, 6)
-    grad_theta_7 = gradient_function(y_pred, y_exp, x, 7)
+        # Generate predictions
+        y_predicted = []
+        for x in x_range:
+            X = np.array([x**i for i in range(N + 1)])  # Degree N polynomial
+            X = np.matrix(X)
+            y_pred = np.matmul(A, X.T)
+            y_predicted.append(y_pred[0, 0])
 
-    theta_0 -= learning_rate * grad_theta_0
-    theta_1 -= learning_rate * grad_theta_1
-    theta_2 -= learning_rate * grad_theta_2
-    theta_3 -= learning_rate * grad_theta_3
-    theta_4 -= learning_rate * grad_theta_4
-    theta_5 -= learning_rate * grad_theta_5
-    theta_6 -= learning_rate * grad_theta_6
-    theta_7 -= learning_rate * grad_theta_7
+        # Plot the polynomial regression line
+        plt.plot(x_range, y_predicted, label=f"Polynomial Degree {N}")
 
-    if loss < min_loss:
-        min_loss = loss
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("Polynomial Regression pour different N")
+    plt.legend()
+    plt.show()
 
-print(f"Min loss: {min_loss}")
-plt.scatter(x, y_exp, color="blue", label="Data")
-plt.plot(
-    x,
-    theta_0
-    + theta_1 * x
-    + theta_2 * x**2
-    + theta_3 * x**3
-    + theta_4 * x**4
-    + theta_5 * x**5
-    + theta_6 * x**6
-    + theta_7 * x**7,
-    color="red",
-    label="Prediction model",
-)
-plt.xlabel("x")
-plt.ylabel("y")
-plt.legend()
-plt.title("Prediction avec un polynôme de degré 2")
-plt.show()
+    # Plot loss curves
+    plt.figure(figsize=(12, 8))
+    for N in degrees:
+        _, losses = regression_polynomial(N, data, num_iterations, learning_rate)
+        plt.plot(range(num_iterations), losses, label=f"Degree {N}")
+
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+    plt.title("Loss pour different N")
+    plt.legend()
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    data = np.array(
+        [
+            [-0.95, +0.02],
+            [-0.82, +0.03],
+            [-0.62, -0.17],
+            [-0.43, -0.12],
+            [-0.17, -0.37],
+            [-0.07, -0.25],
+            [+0.25, -0.10],
+            [+0.38, +0.14],
+            [+0.61, +0.53],
+            [+0.79, +0.71],
+            [+1.04, +1.53],
+        ]
+    )
+    
+    learning_rate = 0.001
+    num_iterations = 100
+    degrees = [1, 2, 7, 10]
+
+    test_polynomial_degrees(data, degrees, learning_rate, num_iterations)
