@@ -36,4 +36,12 @@ class MeanSquaredErrorLoss(Loss):
         :param target: The target tensor (shape: same as x)
         :return A tuple containing the loss and the gradient with respect to the input (loss, input_grad)
         """
-        raise NotImplementedError()
+        n = 1
+        for dimension_size in list(x.shape):
+            n = n * dimension_size
+
+        loss = (np.sum(((x-target)**2)))/n
+
+        input_grad = (2/n)*(x-target)
+
+        return loss, input_grad
