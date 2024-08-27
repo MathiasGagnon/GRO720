@@ -1,7 +1,7 @@
 import numpy as np
 
 from dnn_framework.layer import Layer
-
+epsilon = 1e-5
 
 class FullyConnectedLayer(Layer):
     """
@@ -9,19 +9,19 @@ class FullyConnectedLayer(Layer):
     """
 
     def __init__(self, input_count, output_count):
-        raise NotImplementedError()
+        self.param = {'w': np.random.randn(output_count, input_count), 'b': np.random.randn(output_count)}
 
     def get_parameters(self):
-        raise NotImplementedError()
+        return self.param
 
     def get_buffers(self):
         raise NotImplementedError()
 
     def forward(self, x):
-        raise NotImplementedError()
+        return np.matmul(x, self.param['w'].T) + self.param['b'], x
 
     def backward(self, output_grad, cache):
-        raise NotImplementedError()
+        return np.dot(output_grad, self.param['w']), {'w':np.dot(output_grad.T, cache), 'b':np.sum(output_grad, axis=0)}
 
 
 class BatchNormalization(Layer):
@@ -30,25 +30,39 @@ class BatchNormalization(Layer):
     """
 
     def __init__(self, input_count, alpha=0.1):
-        raise NotImplementedError()
+        super().__init__()
+        self.input_count = input_count
+        self.buffer = {'global_mean':np.zeros(input_count), 'global_variance': np.zeros(input_count)}
+        self.param = {'gamma': np.zeros(input_count), 'beta': np.zeros(input_count)}
 
     def get_parameters(self):
-        raise NotImplementedError()
+        return self.param
 
     def get_buffers(self):
-        raise NotImplementedError()
+        return self.buffer
 
     def forward(self, x):
-        raise NotImplementedError()
+        if self._is_training:
+            return self._forward_training(x)
+        else:
+            return self._forward_evaluation(x)
 
     def _forward_training(self, x):
-        raise NotImplementedError()
+        i = (x - np.mean(x, axis=0))
+        y = np.sqrt(np.var(x, axis=0))
+        result = (i/y)
+        y = self.param['gamma'] * result + self.param['beta']
+        return y, result
 
     def _forward_evaluation(self, x):
-        raise NotImplementedError()
+        i = (x - self.buffer['global_mean'])
+        y = np.sqrt(self.buffer['global_variance'])
+        result = (i/y)
+        y = self.param['gamma'] * result + self.param['beta']
+        return y, result
 
     def backward(self, output_grad, cache):
-        raise NotImplementedError()
+        return output_grad * self.param['gamma'] ,{'gamma': np.sum(output_grad * cache, axis=0), 'beta': np.sum(output_grad, axis=0)}
 
 
 class Sigmoid(Layer):
@@ -63,10 +77,10 @@ class Sigmoid(Layer):
         raise NotImplementedError()
 
     def forward(self, x):
-        raise NotImplementedError()
+        return 1/(1+ np.exp(-x)), x
 
     def backward(self, output_grad, cache):
-        raise NotImplementedError()
+        return self.forward(cache)[0] * (1 - self.forward(cache)[0]) * output_grad, cache
 
 
 class ReLU(Layer):
@@ -81,7 +95,7 @@ class ReLU(Layer):
         raise NotImplementedError()
 
     def forward(self, x):
-        raise NotImplementedError()
+        return np.maximum(0, x), x
 
     def backward(self, output_grad, cache):
-        raise NotImplementedError()
+        return np.where(cache > 0, 1, 0) * output_grad, cache

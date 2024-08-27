@@ -98,6 +98,6 @@ if __name__ == "__main__":
     
     learning_rate = 0.001
     num_iterations = 100
-    degrees = [1, 2, 7, 10]
+    degrees = [1, 2, 7, 10, 11]
 
     test_polynomial_degrees(data, degrees, learning_rate, num_iterations)

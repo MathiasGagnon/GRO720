@@ -36,43 +36,39 @@ def test_grad(input_shape, forward, backward, X=None, output_grad=None):
 
 # ------------------------------ Layer functions ------------------------------
 def fully_connected_forward(W, b, X):
-    # <Your code here>
-    raise NotImplementedError()
+    Z = np.matmul(X, W.T) + b
+    print(f"W : {W.shape}, b : {b.shape}, Z : {Z.shape}")
+    return Z
 
 
 def fully_connected_backward(W, b, X, output_grad):
-    # <Your code here>
-    raise NotImplementedError()
+    return np.dot(output_grad, W) , np.dot(output_grad.T, X) , np.sum(output_grad, axis=0)
 
 
 def relu_forward(X):
-    # <Your code here>
-    raise NotImplementedError()
-
+    return np.maximum(0, X)
 
 def relu_backward(X, output_grad):
-    # <Your code here>
-    raise NotImplementedError()
+    return np.where(X > 0, 1, 0) * output_grad
 
 
 def sigmoid_forward(X):
-    # <Your code here>
-    raise NotImplementedError()
+    return 1/(1+ np.exp(-X))
 
 
 def sigmoid_backward(X, output_grad):
-    # <Your code here>
-    raise NotImplementedError()
+    gradient = sigmoid_forward(X) * (1 - sigmoid_forward(X)) * output_grad
+    return gradient
 
 
 def bce_forward(x, target):
-    # <Your code here>
-    raise NotImplementedError()
+    loss = -np.mean(target * np.log(x) + (1 - target) * np.log(1 - x))
+    return loss
 
 
 def bce_backward(x, target):
-    # <Your code here>
-    raise NotImplementedError()
+    gradient = -(target/x) + (1-target)/(1-x)
+    return gradient/len(target)
 
 
 # ------------------------------ Test functions ------------------------------
@@ -321,17 +317,17 @@ def show_classification(W1, b1, W2, b2, W3, b3, X, title=''):
     ax.scatter(X[c2,0], X[c2,1], c='blue')
     fig.show()
 
-# ------------------------------------ main -----------------------------------
-mode = 'training'
-if mode == 'test':
-    test()
-elif mode == 'overfitting':
-    x_train = np.array([[0.5, 0.5], [0.75, 0.75], [0.25, 0.25], [0.1, 0.1]])
-    target_train = np.array([[0], [0], [1], [1]], dtype=int)
-    train(x_train, target_train)
-elif mode == 'training':
-    x_train = np.genfromtxt('train.csv', delimiter=',')[:,slice(0,2)]
-    target_train = np.expand_dims(np.genfromtxt('train.csv', delimiter=',')[:,2], axis=1)
-    x_val = np.genfromtxt('val.csv', delimiter=',')[:,slice(0,2)]
-    target_val = np.expand_dims(np.genfromtxt('val.csv', delimiter=',')[:,2], axis=1)
-    train(x_train, target_train, x_val, target_val, epoch_count=20000, learning_rate=0.04)
+if __name__ == '__main__':
+    mode = 'test'
+    if mode == 'test':
+        test()
+    elif mode == 'overfitting':
+        x_train = np.array([[0.5, 0.5], [0.75, 0.75], [0.25, 0.25], [0.1, 0.1]])
+        target_train = np.array([[0], [0], [1], [1]], dtype=int)
+        train(x_train, target_train)
+    elif mode == 'training':
+        x_train = np.genfromtxt('train.csv', delimiter=',')[:,slice(0,2)]
+        target_train = np.expand_dims(np.genfromtxt('train.csv', delimiter=',')[:,2], axis=1)
+        x_val = np.genfromtxt('val.csv', delimiter=',')[:,slice(0,2)]
+        target_val = np.expand_dims(np.genfromtxt('val.csv', delimiter=',')[:,2], axis=1)
+        train(x_train, target_train, x_val, target_val, epoch_count=20000, learning_rate=0.04)
