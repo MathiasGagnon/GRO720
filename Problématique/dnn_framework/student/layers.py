@@ -69,7 +69,11 @@ class BatchNormalization(Layer):
         return y, x_hat
 
     def backward(self, output_grad, cache):
-        return output_grad * self.param['gamma'] ,{'gamma': np.sum(output_grad * cache, axis=0), 'beta': np.sum(output_grad, axis=0)}
+        grad_x_hat = output_grad * self.param['gamma']
+        grad_var = np.sum(grad_x_hat * (cache-self.buffer['global_mean']) * -0.5 * (self.buffer['global_variance'])**(-1.5), axis=0)
+        grad_mean = -np.sum(grad_x_hat/np.sqrt(self.buffer['global_variance']), axis=0)
+        grad_x = (grad_x_hat/np.sqrt(self.buffer['global_variance'])) + (2/self.input_count) * grad_var * (cache-cache-self.buffer['global_mean']) + 1/self.input_count * grad_mean
+        return grad_x ,{'gamma': np.sum(output_grad * cache, axis=0), 'beta': np.sum(output_grad, axis=0)}
 
 
 class Sigmoid(Layer):
