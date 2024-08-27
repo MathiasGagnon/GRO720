@@ -32,6 +32,7 @@ class BatchNormalization(Layer):
     def __init__(self, input_count, alpha=0.1):
         super().__init__()
         self.input_count = input_count
+        self.alpha = alpha
         self.buffer = {'global_mean':np.zeros(input_count), 'global_variance': np.zeros(input_count)}
         self.param = {'gamma': np.zeros(input_count), 'beta': np.zeros(input_count)}
 
@@ -48,18 +49,24 @@ class BatchNormalization(Layer):
             return self._forward_evaluation(x)
 
     def _forward_training(self, x):
-        i = (x - np.mean(x, axis=0))
-        y = np.sqrt(np.var(x, axis=0))
-        result = (i/y)
-        y = self.param['gamma'] * result + self.param['beta']
-        return y, result
+        batch_mean = np.mean(x, axis=0)
+        batch_variance = np.var(x, axis=0)
+
+        if np.all(self.buffer['global_mean'] == 0):
+            self.buffer['global_mean'] = batch_mean
+
+        if np.all(self.buffer['global_variance'] == 0):
+            self.buffer['global_variance'] = batch_variance
+
+        self.buffer['global_mean'] = (1 - self.alpha) * self.buffer['global_mean'] + self.alpha * batch_mean
+        self.buffer['global_variance'] = (1 - self.alpha) * self.buffer['global_variance'] + self.alpha * batch_variance
+
+        return self._forward_evaluation(x)
 
     def _forward_evaluation(self, x):
-        i = (x - self.buffer['global_mean'])
-        y = np.sqrt(self.buffer['global_variance'])
-        result = (i/y)
-        y = self.param['gamma'] * result + self.param['beta']
-        return y, result
+        x_hat = ((x - self.buffer['global_mean'])/np.sqrt(self.buffer['global_variance']))
+        y = self.param['gamma'] * x_hat + self.param['beta']
+        return y, x_hat
 
     def backward(self, output_grad, cache):
         return output_grad * self.param['gamma'] ,{'gamma': np.sum(output_grad * cache, axis=0), 'beta': np.sum(output_grad, axis=0)}
