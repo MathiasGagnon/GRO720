@@ -15,7 +15,7 @@ class FullyConnectedLayer(Layer):
         return self.param
 
     def get_buffers(self):
-        raise NotImplementedError()
+        return {}
 
     def forward(self, x):
         return np.matmul(x, self.param['w'].T) + self.param['b'], x
@@ -64,14 +64,14 @@ class BatchNormalization(Layer):
         return self._forward_evaluation(x)
 
     def _forward_evaluation(self, x):
-        x_hat = ((x - self.buffer['global_mean'])/np.sqrt(self.buffer['global_variance']))
+        x_hat = ((x - self.buffer['global_mean'])/np.sqrt(self.buffer['global_variance']+ epsilon))
         y = self.param['gamma'] * x_hat + self.param['beta']
         return y, x_hat
 
     def backward(self, output_grad, cache):
         grad_x_hat = output_grad * self.param['gamma']
-        grad_var = np.sum(grad_x_hat * (cache-self.buffer['global_mean']) * -0.5 * (self.buffer['global_variance'])**(-1.5), axis=0)
-        grad_mean = -np.sum(grad_x_hat/np.sqrt(self.buffer['global_variance']), axis=0)
+        grad_var = np.sum(grad_x_hat * (cache-self.buffer['global_mean']) * -0.5 * (self.buffer['global_variance'] + epsilon)**(-1.5), axis=0)
+        grad_mean = -np.sum(grad_x_hat/np.sqrt(self.buffer['global_variance'] + epsilon), axis=0)
         grad_x = (grad_x_hat/np.sqrt(self.buffer['global_variance'])) + (2/self.input_count) * grad_var * (cache-cache-self.buffer['global_mean']) + 1/self.input_count * grad_mean
         return grad_x ,{'gamma': np.sum(output_grad * cache, axis=0), 'beta': np.sum(output_grad, axis=0)}
 
@@ -82,16 +82,16 @@ class Sigmoid(Layer):
     """
 
     def get_parameters(self):
-        raise NotImplementedError()
+        return {}
 
     def get_buffers(self):
-        raise NotImplementedError()
+        return {}
 
     def forward(self, x):
         return 1/(1+ np.exp(-x)), x
 
     def backward(self, output_grad, cache):
-        return self.forward(cache)[0] * (1 - self.forward(cache)[0]) * output_grad, cache
+        return self.forward(cache)[0] * (1 - self.forward(cache)[0]) * output_grad, {}
 
 
 class ReLU(Layer):
@@ -100,13 +100,13 @@ class ReLU(Layer):
     """
 
     def get_parameters(self):
-        raise NotImplementedError()
+        return {}
 
     def get_buffers(self):
-        raise NotImplementedError()
+        return {}
 
     def forward(self, x):
         return np.maximum(0, x), x
 
     def backward(self, output_grad, cache):
-        return np.where(cache > 0, 1, 0) * output_grad, cache
+        return np.where(cache > 0, 1, 0) * output_grad, {}
