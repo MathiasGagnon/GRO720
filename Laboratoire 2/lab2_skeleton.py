@@ -357,4 +357,4 @@ if __name__ == '__main__':
         target_train = np.expand_dims(np.genfromtxt('Laboratoire 2\\train.csv', delimiter=',')[:,2], axis=1)
         x_val = np.genfromtxt('Laboratoire 2\\val.csv', delimiter=',')[:,slice(0,2)]
         target_val = np.expand_dims(np.genfromtxt('Laboratoire 2\\val.csv', delimiter=',')[:,2], axis=1)
-        train(x_train, target_train, x_val, target_val, epoch_count=4000, learning_rate=0.005)
+        train(x_train, target_train, x_val, target_val, epoch_count=17000, learning_rate=0.04)
