@@ -36,9 +36,7 @@ def test_grad(input_shape, forward, backward, X=None, output_grad=None):
 
 # ------------------------------ Layer functions ------------------------------
 def fully_connected_forward(W, b, X):
-    Z = np.matmul(X, W.T) + b
-    print(f"W : {W.shape}, b : {b.shape}, Z : {Z.shape}")
-    return Z
+    return np.matmul(X, W.T) + b
 
 
 def fully_connected_backward(W, b, X, output_grad):
@@ -54,7 +52,6 @@ def relu_backward(X, output_grad):
 
 def sigmoid_forward(X):
     return 1/(1+ np.exp(-X))
-
 
 def sigmoid_backward(X, output_grad):
     gradient = sigmoid_forward(X) * (1 - sigmoid_forward(X)) * output_grad
@@ -223,13 +220,30 @@ def train(x_train, target_train, x_val=None, target_val=None, epoch_count=100, l
         print('epoch={}'.format(epoch + 1))
         
         # Training: Forward pass
-        # <Your code here>
-        
+        x_lin_1 = fully_connected_forward(W1, b1, x_train)
+        x_relu_1 = relu_forward(x_lin_1)
+        x_lin_2 = fully_connected_forward(W2, b2, x_relu_1)
+        x_relu_2 = relu_forward(x_lin_2)
+        x_lin_3 = fully_connected_forward(W3, b3, x_relu_2)
+        y = sigmoid_forward(x_lin_3)
+        loss = bce_forward(y, target_train)
+
         # Training: Backward pass
-        # <Your code here>
+        grad_bce = bce_backward(y, target_train)
+        grad_sig = sigmoid_backward(x_lin_3, grad_bce)
+        grad_lin_3_input, grad_lin_3_W, grad_lin_3_b = fully_connected_backward(W3, b3, x_relu_2, grad_sig)
+        grad_relu_2 = relu_backward(x_lin_2, grad_lin_3_input)
+        grad_lin_2_input, grad_lin_2_W, grad_lin_2_b = fully_connected_backward(W2, b2, x_relu_1, grad_relu_2)
+        grad_relu_1 = relu_backward(x_lin_1, grad_lin_2_input)
+        _, grad_lin_1_W, grad_lin_1_b = fully_connected_backward(W1, b1, x_train, grad_relu_1)
         
         # Training: Descent gradient
-        # <Your code here>   
+        W3 -= learning_rate * grad_lin_3_W
+        b3 -= learning_rate * grad_lin_3_b
+        W2 -= learning_rate * grad_lin_2_W
+        b2 -= learning_rate * grad_lin_2_b
+        W1 -= learning_rate * grad_lin_1_W
+        b1 -= learning_rate * grad_lin_1_b  
         
         # Training: Metrics
         losses_train.append(loss)        
@@ -243,7 +257,8 @@ def train(x_train, target_train, x_val=None, target_val=None, epoch_count=100, l
         if x_val is not None and target_val is not None:
 
             # Validation: Forward pass
-            # <Your code here>
+            y = valid_network(W1, b1, W2, b2, W3, b3, x_val)
+            loss = bce_forward(y, target_val)
 
             # Validation: Metrics
             losses_val.append(loss)        
@@ -294,6 +309,7 @@ def show_decision_boundary(W1, b1, W2, b2, W3, b3):
     data = np.array(np.meshgrid(x1, x2)).T.reshape(-1,2)
     
     # <Your code here, same as forward pass in train>
+    y = valid_network(W1, b1, W2, b2, W3, b3, data)
     
     fig = plt.figure(figsize=(5, 5), dpi=200)
     ax = fig.add_subplot(111)
@@ -303,7 +319,7 @@ def show_decision_boundary(W1, b1, W2, b2, W3, b3):
 
 def show_classification(W1, b1, W2, b2, W3, b3, X, title=''):
 
-    # <Your code here, same as forward pass in train> 
+    y = valid_network(W1, b1, W2, b2, W3, b3, X)
     
     predicted_classes = (y > 0.5).astype(int)
 
@@ -317,8 +333,19 @@ def show_classification(W1, b1, W2, b2, W3, b3, X, title=''):
     ax.scatter(X[c2,0], X[c2,1], c='blue')
     fig.show()
 
+def valid_network(W1, b1, W2, b2, W3, b3, X):
+    x_lin_1 = fully_connected_forward(W1, b1, X)
+    x_relu_1 = relu_forward(x_lin_1)
+    x_lin_2 = fully_connected_forward(W2, b2, x_relu_1)
+    x_relu_2 = relu_forward(x_lin_2)
+    x_lin_3 = fully_connected_forward(W3, b3, x_relu_2)
+    y = sigmoid_forward(x_lin_3)
+
+    return y
+
+
 if __name__ == '__main__':
-    mode = 'test'
+    mode = 'training'
     if mode == 'test':
         test()
     elif mode == 'overfitting':
@@ -326,8 +353,8 @@ if __name__ == '__main__':
         target_train = np.array([[0], [0], [1], [1]], dtype=int)
         train(x_train, target_train)
     elif mode == 'training':
-        x_train = np.genfromtxt('train.csv', delimiter=',')[:,slice(0,2)]
-        target_train = np.expand_dims(np.genfromtxt('train.csv', delimiter=',')[:,2], axis=1)
-        x_val = np.genfromtxt('val.csv', delimiter=',')[:,slice(0,2)]
-        target_val = np.expand_dims(np.genfromtxt('val.csv', delimiter=',')[:,2], axis=1)
-        train(x_train, target_train, x_val, target_val, epoch_count=20000, learning_rate=0.04)
+        x_train = np.genfromtxt('Laboratoire 2\\train.csv', delimiter=',')[:,slice(0,2)]
+        target_train = np.expand_dims(np.genfromtxt('Laboratoire 2\\train.csv', delimiter=',')[:,2], axis=1)
+        x_val = np.genfromtxt('Laboratoire 2\\val.csv', delimiter=',')[:,slice(0,2)]
+        target_val = np.expand_dims(np.genfromtxt('Laboratoire 2\\val.csv', delimiter=',')[:,2], axis=1)
+        train(x_train, target_train, x_val, target_val, epoch_count=4000, learning_rate=0.005)
