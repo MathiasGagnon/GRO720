@@ -1,7 +1,7 @@
 import numpy as np
 
 from dnn_framework.layer import Layer
-epsilon = 1e-5
+epsilon = 1e-6
 
 class FullyConnectedLayer(Layer):
     """
@@ -32,9 +32,8 @@ class BatchNormalization(Layer):
     def __init__(self, input_count, alpha=0.1):
         super().__init__()
         self.input_count = input_count
-        self.alpha = alpha
         self.buffer = {'global_mean':np.zeros(input_count), 'global_variance': np.zeros(input_count)}
-        self.param = {'gamma': np.zeros(input_count), 'beta': np.zeros(input_count)}
+        self.param = {'alpha': alpha, 'gamma': np.zeros(input_count), 'beta': np.zeros(input_count)}
 
     def get_parameters(self):
         return self.param
@@ -58,8 +57,8 @@ class BatchNormalization(Layer):
         if np.all(self.buffer['global_variance'] == 0):
             self.buffer['global_variance'] = batch_variance
 
-        self.buffer['global_mean'] = (1 - self.alpha) * self.buffer['global_mean'] + self.alpha * batch_mean
-        self.buffer['global_variance'] = (1 - self.alpha) * self.buffer['global_variance'] + self.alpha * batch_variance
+        self.buffer['global_mean'] = (1 - self.param['alpha']) * self.buffer['global_mean'] + self.param['alpha'] * batch_mean
+        self.buffer['global_variance'] = (1 - self.param['alpha']) * self.buffer['global_variance'] + self.param['alpha'] * batch_variance
 
         return self._forward_evaluation(x)
 
