@@ -67,9 +67,11 @@ class MnistTrainer(Trainer):
 
     def _test(self, network, test_dataset_loader):
         test_accuracy_metric = ClassificationAccuracyMetric()
+        test_precision_metric = ClassificationPrecisionMetric()
 
         for x, target in tqdm(test_dataset_loader):
             y = network.forward(x)
             test_accuracy_metric.add(y, target)
+            test_precision_metric.add(y, target)
 
-        print('Accuracy={}'.format(test_accuracy_metric.get_accuracy()))
+        print('Accuracy={} Precision={}'.format(test_accuracy_metric.get_accuracy(), test_precision_metric.get_precision()))
