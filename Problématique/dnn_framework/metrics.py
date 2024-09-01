@@ -71,6 +71,57 @@ class ClassificationAccuracyMetric:
             return 0
         return self._good / self._total
 
+class ClassificationPrecisionMetric:
+    """
+    A class to calculate the precision metric from batch outputs.
+    """
+
+    def __init__(self):
+        """
+        Initializes the precision metric with counters for true positives (TP) 
+        and false positives (FP).
+        """
+        self._true_positive = 0  # Count of true positives
+        self._false_positive = 0  # Count of false positives
+
+    def clear(self):
+        """
+        Resets the metric counters. This method should be called between epochs.
+        """
+        self._true_positive = 0
+        self._false_positive = 0
+
+    def add(self, predicted_class_scores, target_classes, positive_class=1):
+        """
+        Aggregates the outputs from a batch and updates the precision counters.
+
+        :param predicted_class_scores: Array-like, shape (batch_size, num_classes)
+                                       Network output scores for each class.
+        :param target_classes: Array-like, shape (batch_size,)
+                               True class indices for each sample in the batch.
+        :param positive_class: The class considered as positive (default is 1).
+        """
+        # Get predicted classes by finding the index of the maximum score
+        predicted_classes = np.argmax(predicted_class_scores, axis=1)
+
+        # True positives: predicted positive and actually positive
+        self._true_positive += np.sum((predicted_classes == positive_class) & 
+                                      (target_classes == positive_class))
+
+        # False positives: predicted positive but actually negative
+        self._false_positive += np.sum((predicted_classes == positive_class) & 
+                                       (target_classes != positive_class))
+
+    def get_precision(self):
+        """
+        Computes and returns the precision metric.
+
+        :return: Precision as a float. If no positive predictions have been made, returns 0.
+        """
+        if self._true_positive + self._false_positive == 0:
+            return 0.0
+        return self._true_positive / (self._true_positive + self._false_positive)
+
 
 class LossLearningCurves:
     """
@@ -125,6 +176,8 @@ class LossAccuracyLearningCurves:
         self._validation_loss_values = []
         self._training_accuracy_values = []
         self._validation_accuracy_values = []
+        self._training_precision_values = []
+        self._validation_precision_values = []
 
     def add_training_loss_value(self, value):
         """
@@ -153,15 +206,30 @@ class LossAccuracyLearningCurves:
         :param value: The next validation accuracy value
         """
         self._validation_accuracy_values.append(value)
+    
+    def add_training_precision_value(self, value):
+        """
+        Add the next validation loss value.
+        :param value: The next validation loss value
+        """
+        self._training_precision_values.append(value)
+
+    def add_validation_precision_value(self, value):
+        """
+        Add the next validation accuracy value.
+        :param value: The next validation accuracy value
+        """
+        self._validation_precision_values.append(value)
 
     def save_figure(self, output_path):
         """
         Save the learning curves to an image file.
         :param output_path: The image output path
         """
-        fig = plt.figure(figsize=(10, 5), dpi=300)
-        ax1 = fig.add_subplot(121)
-        ax2 = fig.add_subplot(122)
+        fig = plt.figure(figsize=(15, 5), dpi=300)
+        ax1 = fig.add_subplot(131)
+        ax2 = fig.add_subplot(132)
+        ax3 = fig.add_subplot(133)
 
         epochs = range(1, len(self._training_accuracy_values) + 1)
         ax1.plot(epochs, self._training_loss_values, '-o', color='tab:blue', label='Training')
@@ -178,6 +246,14 @@ class LossAccuracyLearningCurves:
         ax2.set_xlabel(u'Epoch')
         ax2.set_ylabel(u'Accuracy')
         ax2.legend()
+
+        epochs = range(1, len(self._training_precision_values) + 1)
+        ax3.plot(epochs, self._training_precision_values, '-o', color='tab:blue', label='Training')
+        ax3.plot(epochs, self._validation_precision_values, '-o', color='tab:orange', label='Validation')
+        ax3.set_title(u'Precision')
+        ax3.set_xlabel(u'Epoch')
+        ax3.set_ylabel(u'Precision')
+        ax3.legend()
 
         fig.savefig(output_path)
         plt.close(fig)

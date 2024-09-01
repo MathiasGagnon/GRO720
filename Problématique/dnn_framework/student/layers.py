@@ -31,9 +31,9 @@ class BatchNormalization(Layer):
 
     def __init__(self, input_count, alpha=0.1):
         super().__init__()
-        self.input_count = input_count
+        self.alpha = alpha
         self.buffer = {'global_mean':np.zeros(input_count), 'global_variance': np.zeros(input_count)}
-        self.param = {'alpha': alpha, 'gamma': np.zeros(input_count), 'beta': np.zeros(input_count)}
+        self.param = {'gamma': np.ones(input_count), 'beta': np.zeros(input_count)}
 
     def get_parameters(self):
         return self.param
@@ -44,8 +44,7 @@ class BatchNormalization(Layer):
     def forward(self, x):
         if self._is_training:
             return self._forward_training(x)
-        else:
-            return self._forward_evaluation(x)
+        return self._forward_evaluation(x)
 
     def _forward_training(self, x):
         batch_mean = np.mean(x, axis=0)
@@ -57,22 +56,34 @@ class BatchNormalization(Layer):
         if np.all(self.buffer['global_variance'] == 0):
             self.buffer['global_variance'] = batch_variance
 
-        self.buffer['global_mean'] = (1 - self.param['alpha']) * self.buffer['global_mean'] + self.param['alpha'] * batch_mean
-        self.buffer['global_variance'] = (1 - self.param['alpha']) * self.buffer['global_variance'] + self.param['alpha'] * batch_variance
+        self.buffer['global_mean'] = (1 - self.alpha) * self.buffer['global_mean'] + self.alpha * batch_mean
+        self.buffer['global_variance'] = (1 - self.alpha) * self.buffer['global_variance'] + self.alpha * batch_variance
 
         return self._forward_evaluation(x)
 
     def _forward_evaluation(self, x):
-        x_hat = ((x - self.buffer['global_mean'])/np.sqrt(self.buffer['global_variance']+ epsilon))
-        y = self.param['gamma'] * x_hat + self.param['beta']
-        return y, x_hat
+        y = self.param['gamma'] * self.get_x_hat(x) + self.param['beta']
+        return y, x
 
     def backward(self, output_grad, cache):
+        x = cache
+        M = cache.shape[0]
+        gamma = self.param['gamma']
+        batch_mean = np.mean(x, axis=0)
+        batch_variance = np.var(x, axis=0)
+
+
+        x_grad = (1.0 / M) * gamma * 1 / np.sqrt(batch_variance + epsilon) * (M * output_grad - np.sum(output_grad, axis=0) \
+                 - (x - batch_mean) * 1 / (batch_variance + epsilon) * np.sum(output_grad * (x - batch_mean), axis=0))
+
         grad_x_hat = output_grad * self.param['gamma']
         grad_var = np.sum(grad_x_hat * (cache-self.buffer['global_mean']) * -0.5 * (self.buffer['global_variance'] + epsilon)**(-1.5), axis=0)
         grad_mean = -np.sum(grad_x_hat/np.sqrt(self.buffer['global_variance'] + epsilon), axis=0)
-        grad_x = (grad_x_hat/np.sqrt(self.buffer['global_variance'])) + (2/self.input_count) * grad_var * (cache-cache-self.buffer['global_mean']) + 1/self.input_count * grad_mean
-        return grad_x ,{'gamma': np.sum(output_grad * cache, axis=0), 'beta': np.sum(output_grad, axis=0)}
+        grad_x = (grad_x_hat/np.sqrt(self.buffer['global_variance'])) + (2/M) * grad_var * (cache-cache-self.buffer['global_mean']) + 1/M * grad_mean
+        return x_grad , {'gamma': np.sum(output_grad * self.get_x_hat(cache), axis=0), 'beta': np.sum(output_grad, axis=0)}
+    
+    def get_x_hat(self, x):
+        return (x - self.buffer['global_mean']) / np.sqrt(self.buffer['global_variance'] + epsilon)
 
 
 class Sigmoid(Layer):
