@@ -59,7 +59,7 @@ class Trainer:
 
         print('\nTest')
         self._network.eval()
-        self._test(self._network, self._test_dataset_loader)
+        self._test(self._network, self._test_dataset_loader, self._output_path)
 
     def _train_one_epoch(self):
         self._clear_between_training_epoch()

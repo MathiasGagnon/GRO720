@@ -6,6 +6,10 @@ from dnn_framework import Trainer, CrossEntropyLoss, SgdOptimizer, \
     LossMetric, ClassificationAccuracyMetric, LossAccuracyLearningCurves, ClassificationPrecisionMetric
 from mnist.dataset import MnistDataset
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+
 
 class MnistTrainer(Trainer):
     def __init__(self, network, learning_rate, epoch_count, batch_size, output_path):
@@ -65,13 +69,34 @@ class MnistTrainer(Trainer):
                                                            self._validation_accuracy_metric.get_accuracy(), 
                                                            self._validation_precision_metric.get_precision()))
 
-    def _test(self, network, test_dataset_loader):
+    def _test(self, network, test_dataset_loader, output_path):
         test_accuracy_metric = ClassificationAccuracyMetric()
         test_precision_metric = ClassificationPrecisionMetric()
+
+        all_targets = []
+        all_predictions = []
 
         for x, target in tqdm(test_dataset_loader):
             y = network.forward(x)
             test_accuracy_metric.add(y, target)
             test_precision_metric.add(y, target)
 
+            all_targets.extend(target.tolist())
+            all_predictions.extend(y.argmax(axis=1).tolist())
+
+        cm = confusion_matrix(all_targets, all_predictions, normalize='true')
+
+        # Plot confusion matrix
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt='.2f', cmap='Blues')
+        plt.xlabel('Predicted')
+        plt.ylabel('Actual')
+        plt.title('Confusion Matrix')
+
+        # Save the plot to the specified path
+        plt.savefig(os.path.join(output_path, 'confusion_matrix.png'))
+        plt.close()
+
         print('Accuracy={} Precision={}'.format(test_accuracy_metric.get_accuracy(), test_precision_metric.get_precision()))
+
+

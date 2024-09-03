@@ -8,7 +8,7 @@ def main():
     parser = argparse.ArgumentParser(description='Train Backbone')
     parser.add_argument('--learning_rate', type=float, help='Choose the learning rate', required=False, default=0.01)
     parser.add_argument('--batch_size', type=int, help='Set the batch size for the training', required=False, default=1000)
-    parser.add_argument('--epoch_count', type=int, help='Choose the epoch count', required=False, default=50)
+    parser.add_argument('--epoch_count', type=int, help='Choose the epoch count', required=False, default=5)
     parser.add_argument('--output_path', type=str, help='Choose the output path', required=False, default='./Problématique/checkpoint/')
 
     parser.add_argument('--checkpoint_path', type=str, help='Choose the output path', default=None)
