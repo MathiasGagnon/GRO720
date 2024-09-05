@@ -9,7 +9,10 @@ class FullyConnectedLayer(Layer):
     """
 
     def __init__(self, input_count, output_count):
-        self.param = {'w': np.random.randn(output_count, input_count), 'b': np.random.randn(output_count)}
+         self.param = {
+            'w': np.random.randn(output_count, input_count) * np.sqrt(2 / (input_count + output_count)),
+            'b': np.random.randn(output_count) * np.sqrt(2 / output_count)
+        }
 
     def get_parameters(self):
         return self.param

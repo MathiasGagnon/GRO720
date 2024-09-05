@@ -6,17 +6,19 @@ from mnist import MnistTrainer
 
 def main():
     parser = argparse.ArgumentParser(description='Train Backbone')
-    parser.add_argument('--learning_rate', type=float, help='Choose the learning rate', required=False, default=0.005)
+    parser.add_argument('--learning_rate', type=float, help='Choose the learning rate', required=False, default=0.01)
     parser.add_argument('--batch_size', type=int, help='Set the batch size for the training', required=False, default=1000)
-    parser.add_argument('--epoch_count', type=int, help='Choose the epoch count', required=False, default=150)
-    parser.add_argument('--output_path', type=str, help='Choose the output path', required=False, default='./Problématique/checkpoint/test_4')
+    parser.add_argument('--epoch_count', type=int, help='Choose the epoch count', required=False, default=5)
+    parser.add_argument('--output_path', type=str, help='Choose the output path', required=False, default='./Problématique/checkpoint/')
 
     parser.add_argument('--checkpoint_path', type=str, help='Choose the output path', default=None)
 
     args = parser.parse_args()
 
+    output_path = args.output_path + f"test_lr={args.learning_rate}_epoch={args.epoch_count}_batch={args.batch_size}"
+
     network = create_network(args.checkpoint_path)
-    trainer = MnistTrainer(network, args.learning_rate, args.epoch_count, args.batch_size, args.output_path)
+    trainer = MnistTrainer(network, args.learning_rate, args.epoch_count, args.batch_size, output_path)
     trainer.train()
 
 
