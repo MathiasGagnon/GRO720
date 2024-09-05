@@ -24,7 +24,7 @@ class FullyConnectedLayer(Layer):
         return np.matmul(x, self.param['w'].T) + self.param['b'], x
 
     def backward(self, output_grad, cache):
-        return np.dot(output_grad, self.param['w']), {'w':np.dot(output_grad.T, cache), 'b':np.sum(output_grad, axis=0)}
+        return np.matmul(output_grad, self.param['w']), {'w':np.matmul(output_grad.T, cache), 'b':np.sum(output_grad, axis=0)}
 
 
 class BatchNormalization(Layer):
