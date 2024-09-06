@@ -81,8 +81,8 @@ class ClassificationPrecisionMetric:
         Initializes the precision metric with counters for true positives (TP) 
         and false positives (FP).
         """
-        self._true_positive = 0  # Count of true positives
-        self._false_positive = 0  # Count of false positives
+        self._true_positive = 0
+        self._false_positive = 0
 
     def clear(self):
         """
@@ -101,14 +101,11 @@ class ClassificationPrecisionMetric:
                                True class indices for each sample in the batch.
         :param positive_class: The class considered as positive (default is 1).
         """
-        # Get predicted classes by finding the index of the maximum score
         predicted_classes = np.argmax(predicted_class_scores, axis=1)
 
-        # True positives: predicted positive and actually positive
         self._true_positive += np.sum((predicted_classes == positive_class) & 
                                       (target_classes == positive_class))
 
-        # False positives: predicted positive but actually negative
         self._false_positive += np.sum((predicted_classes == positive_class) & 
                                        (target_classes != positive_class))
 
