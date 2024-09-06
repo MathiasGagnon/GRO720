@@ -40,7 +40,7 @@ class BatchNormalization(Layer):
 
     def __init__(self, input_count, alpha=0.1):
         super().__init__()
-        self.epsilon = 1 * 10**-7
+        self.epsilon = 1 * 10**-6
         self.alpha = alpha
 
         self.parameters = {"gamma": np.ones(input_count), "beta": np.zeros(input_count)}
